@@ -1,5 +1,5 @@
 {
-  "project-name": "<FILL THIS>",
-  "project-oneliner": "<FILL THIS>",
-  "project-description": "<FILL THIS>"
+  "project-name": "cine-colombia-cli",
+  "project-oneliner": "Comprá boletas de cine desde la terminal, o pidiéndoselo a Claude.",
+  "project-description": "CLI y servidor MCP para Cine Colombia: cartelera, teatros, horarios, mapa de sillas en ASCII y compra de boletas sin salir de la consola. La API interna de Vista Cinema se ingenió a la inversa grabando el tráfico del sitio, incluido el detalle de que Cloudflare discrimina por el casing de los headers HTTP. Con el servidor MCP, un agente hace todo el recorrido conversando, y las salvaguardas viven en el código y no en el prompt: apartar sillas reales exige confirmación explícita por esquema. El pago lo completa una persona a propósito, porque la pasarela es PCI con fingerprinting antifraude."
 }

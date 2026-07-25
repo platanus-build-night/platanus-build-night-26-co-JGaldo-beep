@@ -1,38 +1,83 @@
-# Juan Antonio Galdo — Platanus Build Night — Bogotá @ Buk Project
+# cine-colombia-cli
 
-**Current project logo:** project-logo.png
+**Comprar boletas de cine desde la terminal, o pidiéndoselo a Claude.**
 
-<img src="./project-logo.png" alt="Project Logo" width="200" />
+Cartelera, teatros, horarios, mapa de sillas en ASCII y compra de boletas de Cine
+Colombia sin salir de la consola. Incluye un servidor MCP, así que un agente de IA
+puede hacer todo el recorrido conversando: "quiero ver Obsesión el martes en Centro
+Mayor, dos sillas juntas".
 
-Hacker:
+## Probarlo en 30 segundos
 
-- Juan Antonio Galdo ([@JGaldo-beep](https://github.com/JGaldo-beep))
+Requiere Node 20+. No hay que clonar ni configurar nada:
 
-Before submitting:
+```bash
+npx cine-colombia-cli cartelera --ciudad bogota
+npx cine-colombia-cli horarios "la odisea" --teatro andino
+npx cine-colombia-cli asientos 6461-18858
+```
 
-- ✅ Set a project name, oneliner and description in build-night-project.json
-- ✅ Provide a 1000x1000 png project logo, max 500kb (project-logo.png)
-- ✅ Provide a concise and to the point readme
+Ese último dibuja la sala:
 
-## ⚠️ Deploying (Vercel, Render, etc.)
+```
+           P A N T A L L A
+─────────────────────────────────────
 
-Deploy platforms like **Vercel**, **Render** or **Netlify** can only connect to
-repositories **you own** — they can't be granted access to this organization repo.
-To deploy while keeping your commits here, mirror your code to a personal repo:
+    GENERAL (138 libres)
+   A ○ ○ ○ ○ ○ ○ ○ ○ ○ ○ ○
+   B ○ ○ ○ ○ ○ ○ ○ ○ ○ ○ ○
+   C ○ ○ ○ ○ ○ ○ ● ● ○ ○ ○ ○ ○ ○
+   ...
+```
 
-1. Create a **personal** repository on your own GitHub account.
-2. Point your local `origin` at **both** repos, so a single `git push` updates each one:
+Los huecos son pasillos reales y la silla 1 queda a la derecha, igual que en la carta
+de Cine Colombia.
 
-   ```bash
-   # this org repo (keep it as a push target)...
-   git remote set-url --add --push origin https://github.com/platanus-build-night/platanus-build-night-26-co-JGaldo-beep.git
-   # ...and your personal repo
-   git remote set-url --add --push origin https://github.com/<your-user>/<your-repo>.git
-   ```
+## Usarlo con Claude
 
-   From now on `git push` sends every commit to **both** repositories.
-3. Connect your deploy service (Vercel, Render, …) to your **personal** repo and deploy from there.
+```json
+{
+  "mcpServers": {
+    "cine-colombia": {
+      "command": "npx",
+      "args": ["-y", "--package=cine-colombia-cli", "cine-mcp"]
+    }
+  }
+}
+```
 
-Your commits stay mirrored here for judging, while the deploy runs from the repo you control.
+Diez herramientas. `cotizar_compra` es de solo lectura; `crear_orden` aparta sillas
+reales y **exige `confirmar: true`** por esquema, no por prompt — un modelo no puede
+comprar por su cuenta ni equivocándose de tipo.
 
-Have fun! 🚀
+## Qué tiene de interesante
+
+- **No es scraping de HTML.** Se ingenió a la inversa la API interna de Vista Cinema
+  (OCAPI) grabando el tráfico del sitio, y se consume JSON directo.
+- **Cloudflare discrimina por el casing de los headers HTTP.** `User-Agent` pasa,
+  `user-agent` recibe 403. Como la spec de `Headers` obliga a minúsculas, el `fetch` de
+  cualquier runtime es estructuralmente incapaz de pasar; se usa un subproceso `curl`.
+- **El mapa de sillas sale de la geometría de la sala**, no de las etiquetas: la silla
+  `A16` está en la columna 18, y el eje horizontal va espejado respecto de la API para
+  coincidir con la sala física.
+- **Salvaguardas en código, no en instrucciones**: confirmación explícita, `--dry-run`,
+  y cancelación automática de la orden en cualquier fallo o Ctrl+C.
+- 215 tests sin red, type-check y lint en verde, más un smoke test contra la API real.
+
+## Límites, dichos de frente
+
+- **El pago lo completa una persona.** La pasarela es PCI con fingerprinting
+  antifraude; automatizarla no es viable ni correcto. La CLI llega hasta generar el
+  enlace de pago.
+- **El login necesita una persona** por el reCAPTCHA: abre un navegador real y solo
+  captura la cookie. La contraseña nunca pasa por la CLI.
+- **La sesión de cuenta dura poco.** La cookie declara 30 días, pero el servidor la
+  invalida entre los 15 y 20 minutos (medido). Comprar como invitado no la necesita.
+
+## Enlaces
+
+- Código y documentación completa: https://github.com/JGaldo-beep/cine-colombia-cli
+- Paquete: https://www.npmjs.com/package/cine-colombia-cli
+
+Construido en Platanus Build Night — Bogotá @ Buk, con Claude Opus 5.
+MIT.
